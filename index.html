@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bình Chọn Halloween 2026 - Khoa Ngoại Ngữ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(to bottom, #0f172a, #1e1b4b, #0f172a);
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .glow-orange {
+      text-shadow: 0 0 15px #f97316, 0 0 25px #ea580c;
+    }
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.3);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+
+  <!-- Header Section -->
+  <header class="text-center py-10 px-4">
+    <div class="text-5xl mb-2">🎃 👻 🦇</div>
+    <h1 class="text-4xl md:text-5xl font-black text-orange-500 tracking-wide uppercase glow-orange">
+      HALLOWEEN COSTUME CONTEST 2026
+    </h1>
+    <p class="text-lg md:text-xl text-purple-300 font-semibold mt-2">
+      Cuộc thi Hóa trang Khoa Ngoại Ngữ - 31/10/2026
+    </p>
+    <p class="text-sm text-gray-400 mt-1">Mỗi tài khoản Email chỉ được bình chọn 1 lần duy nhất</p>
+
+    <!-- Authentication Area -->
+    <div id="auth-section" class="mt-6">
+      <button id="login-btn" onclick="loginWithGoogle()" class="bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 flex items-center justify-center mx-auto gap-2">
+        <i class="fa-brands fa-google"></i> Đăng nhập bằng Google để Vote
+      </button>
+      <div id="user-info" class="hidden flex-col items-center justify-center gap-2">
+        <div class="flex items-center gap-3 bg-slate-800/80 px-4 py-2 rounded-full border border-orange-500/30">
+          <img id="user-avatar" class="w-8 h-8 rounded-full" src="" alt="Avatar">
+          <span id="user-name" class="font-medium text-orange-400"></span>
+          <button onclick="logout()" class="text-xs text-red-400 hover:underline ml-2">Đăng xuất</button>
+        </div>
+        <p id="voted-status" class="text-xs text-emerald-400 font-medium hidden">✓ Bạn đã thực hiện bình chọn!</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4">
+
+    <!-- Top 3 Candidates -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold text-center text-yellow-400 mb-8 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-crown text-yellow-500"></i> TOP 3 DẪN ĐẦU <i class="fa-solid fa-crown text-yellow-500"></i>
+      </h2>
+      <div id="top-3-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Render bằng Javascript -->
+      </div>
+    </section>
+
+    <!-- Rest of Candidates -->
+    <section class="mb-12">
+      <h2 class="text-xl font-bold text-slate-300 mb-6 border-b border-slate-700 pb-2">
+        DANH SÁCH THÍ SINH CÒN LẠI
+      </h2>
+      <div id="rest-candidates-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Render bằng Javascript -->
+      </div>
+    </section>
+
+    <!-- Admin: Add Candidate Form -->
+    <section class="mt-16 bg-slate-800/50 p-6 rounded-2xl border border-purple-900 max-w-xl mx-auto">
+      <h3 class="text-lg font-bold text-orange-400 mb-4 text-center">➕ Thêm Thí Sinh Mới (Ban Tổ Chức)</h3>
+      <form id="add-candidate-form" class="space-y-4" onsubmit="handleAddCandidate(event)">
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Tên thí sinh / Lớp</label>
+          <input type="text" id="candidate-name" required placeholder="Ví dụ: Nguyễn Văn A - Anh Văn K46" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Link hình ảnh (URL)</label>
+          <input type="url" id="candidate-image" required placeholder="https://example.com/image.jpg" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-orange-500">
+        </div>
+        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 rounded-lg transition">Thêm Thí Sinh</button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="text-center text-gray-500 text-xs mt-12">
+    © 2026 Khoa Ngoại Ngữ - Halloween Voting Portal
+  </footer>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, increment, setDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // ⚠️ ĐÃ THAY BẰNG THÔNG TIN FIREBASE CỦA BẠN ⚠️
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentUser = null;
+    let hasVoted = false;
+    let candidatesData = [];
+
+    // Lắng nghe trạng thái Đăng nhập
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      const loginBtn = document.getElementById('login-btn');
+      const userInfo = document.getElementById('user-info');
+
+      if (user) {
+        loginBtn.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        userInfo.classList.add('flex');
+        document.getElementById('user-avatar').src = user.photoURL;
+        document.getElementById('user-name').innerText = user.displayName;
+
+        // Kiểm tra xem user này đã vote chưa
+        const voteRef = doc(db, "votes", user.uid);
+        const voteSnap = await getDoc(voteRef);
+        if (voteSnap.exists()) {
+          hasVoted = true;
+          document.getElementById('voted-status').classList.remove('hidden');
+        } else {
+          hasVoted = false;
+          document.getElementById('voted-status').classList.add('hidden');
+        }
+      } else {
+        loginBtn.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        hasVoted = false;
+      }
+      renderCandidates();
+    });
+
+    // Đăng nhập Google
+    window.loginWithGoogle = async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        alert("Lỗi đăng nhập: " + err.message);
+      }
+    };
+
+    // Đăng xuất
+    window.logout = () => signOut(auth);
+
+    // Lắng nghe dữ liệu Thí sinh thời gian thực từ Database
+    onSnapshot(collection(db, "candidates"), (snapshot) => {
+      candidatesData = [];
+      snapshot.forEach((doc) => {
+        candidatesData.push({ id: doc.id, ...doc.data() });
+      });
+      
+      // Sắp xếp theo số lượt vote giảm dần
+      candidatesData.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      renderCandidates();
+    });
+
+    // Hàm thực hiện Vote
+    window.voteForCandidate = async (candidateId) => {
+      if (!currentUser) {
+        alert("Vui lòng đăng nhập Google trước khi thực hiện bình chọn!");
+        return;
+      }
+      if (hasVoted) {
+        alert("Bạn đã bình chọn rồi! Mỗi tài khoản chỉ được vote 1 lần.");
+        return;
+      }
+
+      try {
+        // Tăng số lượt vote của thí sinh
+        const candidateRef = doc(db, "candidates", candidateId);
+        await updateDoc(candidateRef, { votes: increment(1) });
+
+        // Ghi nhận thông tin đã vote của User
+        await setDoc(doc(db, "votes", currentUser.uid), {
+          email: currentUser.email,
+          votedFor: candidateId,
+          timestamp: new Date()
+        });
+
+        alert("🎉 Bình chọn thành công!");
+      } catch (err) {
+        console.error(err);
+        alert("Có lỗi xảy ra khi bình chọn!");
+      }
+    };
+
+    // Hàm Thêm thí sinh (Dành cho BTC)
+    window.handleAddCandidate = async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('candidate-name').value;
+      const imageUrl = document.getElementById('candidate-image').value;
+
+      try {
+        await addDoc(collection(db, "candidates"), {
+          name: name,
+          imageUrl: imageUrl,
+          votes: 0
+        });
+        alert("Đã thêm thí sinh mới!");
+        document.getElementById('add-candidate-form').reset();
+      } catch (err) {
+        alert("Lỗi khi thêm thí sinh: " + err.message);
+      }
+    };
+
+    // Render danh sách Top 3 và Danh sách còn lại
+    function renderCandidates() {
+      const top3Container = document.getElementById('top-3-container');
+      const restContainer = document.getElementById('rest-candidates-container');
+
+      top3Container.innerHTML = '';
+      restContainer.innerHTML = '';
+
+      const top3 = candidatesData.slice(0, 3);
+      const rest = candidatesData.slice(3);
+
+      // Render Top 3
+      top3.forEach((c, index) => {
+        const medals = ['🥇 Top 1', '🥈 Top 2', '🥉 Top 3'];
+        const cardClass = index === 0 ? 'border-2 border-yellow-500 scale-105' : 'border border-slate-700';
+        
+        top3Container.innerHTML += `
+          <div class="bg-slate-800/80 rounded-2xl p-5 shadow-xl transition card-hover flex flex-col justify-between ${cardClass}">
+            <div class="text-center">
+              <span class="inline-block bg-yellow-500/20 text-yellow-300 text-xs font-bold px-3 py-1 rounded-full mb-3">${medals[index]}</span>
+              <img src="${c.imageUrl}" alt="${c.name}" class="w-full h-60 object-cover rounded-xl mb-4 border border-slate-700">
+              <h3 class="text-lg font-bold text-white mb-1">${c.name}</h3>
+              <p class="text-orange-400 font-extrabold text-2xl my-2">${c.votes || 0} <span class="text-xs text-gray-400 font-normal">lượt vote</span></p>
+            </div>
+            <button onclick="voteForCandidate('${c.id}')" ${hasVoted ? 'disabled' : ''} 
+              class="w-full mt-3 py-2 px-4 rounded-xl font-bold text-white transition ${hasVoted ? 'bg-gray-600 cursor-not-allowed' : 'bg-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/30'}">
+              ${hasVoted ? 'Đã bình chọn' : '🎃 Vote Ngay'}
+            </button>
+          </div>
+        `;
+      });
+
+      // Render các vị trí còn lại
+      rest.forEach((c) => {
+        restContainer.innerHTML += `
+          <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/60 card-hover flex flex-col justify-between">
+            <div>
+              <img src="${c.imageUrl}" alt="${c.name}" class="w-full h-44 object-cover rounded-lg mb-3">
+              <h4 class="font-bold text-slate-200 text-sm mb-1 line-clamp-1">${c.name}</h4>
+              <p class="text-orange-400 font-bold text-lg mb-2">${c.votes || 0} <span class="text-xs text-gray-400 font-normal">vote</span></p>
+            </div>
+            <button onclick="voteForCandidate('${c.id}')" ${hasVoted ? 'disabled' : ''} 
+              class="w-full mt-2 py-1.5 px-3 rounded-lg text-sm font-semibold transition ${hasVoted ? 'bg-gray-700 text-gray-400' : 'bg-purple-600 hover:bg-purple-500 text-white'}">
+              ${hasVoted ? 'Đã vote' : 'Vote'}
+            </button>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>
